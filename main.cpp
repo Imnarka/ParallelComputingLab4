@@ -10,23 +10,30 @@
 using std::cout;
 
 float solution(float A, float den, int N) {
-	A = 2 / den;
-	den = sqrt(2 + den);
+	for (int i = 0; i < N - 1; i++) {
+		A *= 2 / den;
+		den = sqrt(2 + den);
+	}
 	return A;
 }
 
 int main()
 {
-	int N, rank, k, i;
+	int N, M, k, i;
 	float den = sqrt(2);
 	float A = 2;
+	float B;
 	scanf("%d", &N);
+	scanf("%d", &M);
+
 	if (N != 1) {
-		for (int i = 0; i < N-1; i++) {
-			A *= 2 / den;
-			den = sqrt(2 + den);
-		}
+		A = solution(A, den, N);
 	}
-	cout << A;
+	
+	B = 6 / A;
+
+	for (int i = 1; i <= M; i++) {
+		B *= pow((2 * i + 3) / (2 * i + 1), 2 * i + 1) * pow((i / (i + 1)), 2 * i);
+	}
 	
 }
