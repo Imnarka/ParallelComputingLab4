@@ -1,77 +1,97 @@
-#define _CRT_SECURE_NO_WARNINGS
-
-#include <stdio.h>
 #include <omp.h>
+#include <inttypes.h>
+#include <math.h>
+#include <stdio.h>
+#include <chrono>
+#include <functional>
 #include <locale.h>
 #include <iostream>
-#include <windows.h>
-#include <ctime>
-#include <time.h>
+
+using namespace std;
 
 
-using std::cout;
-using std::endl;
-
-float task_A(float A, float den, int N) {
-	for (int i = 0; i < N - 1; i++) {
-		A *= 2 / den;
-		den = sqrt(2 + den);
+void task_1(int N, int M) {
+	float A = 2;
+	for (int i = 1; i < N; i++)
+	{
+		float znam = 0;
+		for (int j = 0; j < i; j++)
+		{
+			znam = sqrt(2 + znam);
+		}
+		A = A * 2 / znam;
 	}
-	return A;
+	printf("A = %f\n", A);
+
+	float B = 1;
+	for (int i = 1; i <= M; i++)
+	{
+		B *= pow((float)(2 * i + 3) / (2 * i + 1), 2 * i + 1) * pow((float)i / (i +
+			1), 2 * i);
+	}
+	B = B * 6 / A;
+	printf("B = %f\n", B);
 }
 
-float task_B() {
-	return 0;
+
+void task_2(int N, int M, int C1, int C2) {
+	float A = 2;
+	float B = 1;
+#pragma omp parallel
+	{
+#pragma omp for schedule(static, C1) reduction(*:A)
+		for (int i = 1; i < N; i++)
+		{
+			float znam = 0;
+			for (int j = 0; j < i; j++)
+			{
+				znam = sqrt(2 + znam);
+			}
+			A = A * 2 / znam;
+		}
+#pragma omp master
+		printf("A = %f\n", A);
+#pragma omp for schedule(static, C2) reduction(*:B)
+		for (int i = 1; i <= M; i++)
+		{
+			B *= pow((float)(2 * i + 3) / (2 * i + 1), 2 * i + 1) * pow((float)i / (i +
+				1), 2 * i);
+		}
+	}
+	B = B * 6 / A;
+	printf("B = %f\n", B);
 }
 
 int main()
 {
-	int N, M, k, i;
-	float den = sqrt(2);
-	float A = 2;
-	float B;
-	scanf("%d", &N);
-	scanf("%d", &M);
-	clock_t start, end;
-	start = clock();
-	if (N != 1) {
-		A = task_A(A, den, N);
-	}
-	cout << A << endl;
-	B = 6.0 / A;
+	int N, M, C1, C2;
+	printf("N: ");
+	scanf_s("%d", &N);
+	printf("M: ");
+	scanf_s("%d", &M);
 
-	for (int i = 1; i <= M; i++) {
-		B *= pow((2.0 * i + 3.0) / (2.0 * i + 1.0), 2.0 * i + 1.0) * pow((i / (i + 1.0)), 2.0 * i);
-	}
-	//Sleep(100);
-	end = clock();
-	double time1 = ((double)end - start) / ((double)CLOCKS_PER_SEC);
-	cout << B << endl;
-	// parallel calculation
-	A = 2;
-	B = 1;
-	clock_t start_time, end_time;
-	start_time = clock();
-#pragma omp parallel
-	{
-#pragma omp for schedule(static, 1) reduction(*:A)
-		for (int i = 0; i < N - 1; i++) {
-			A *= 2 / den;
-			den = sqrt(2 + den);
-		}
-#pragma omp master
-		printf("A = %f\n", A);
-#pragma omp for schedule(static, 1) reduction(*:B)
-		for (int i = 1; i <= M; i++) {
-			B *= pow((2.0 * i + 3.0) / (2.0 * i + 1.0), 2.0 * i + 1.0) * pow((i / (i + 1.0)), 2.0 * i);
-		}
-	}
-	B *= 6.0 / A;
-	//Sleep(100);
-	end_time = clock();
-	double time2 = ((double)end_time - start_time) / ((double)CLOCKS_PER_SEC);
-	printf("B = %f\n", B);
-	printf("Time_1 = %f\n", time1);
-	printf("Time_2 = %f\n", time2);
-	printf("Boost: %f\n", time1 / time2);
+	auto start_time = chrono::high_resolution_clock::now();
+
+	task_1(N, M);
+
+	auto end_time = chrono::high_resolution_clock::now();
+	int64_t t_posled = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+	printf("Time_1: %" PRId64 "\n", t_posled);
+
+	printf("C1: ");
+	scanf_s("%d", &C1);
+	printf("C2: ");
+	scanf_s("%d", &C2);
+
+	auto start = chrono::high_resolution_clock::now();
+
+	task_2(N, M, C1, C2);
+
+	auto end = chrono::high_resolution_clock::now();
+	int64_t t_paral = chrono::duration_cast<chrono::microseconds>(end - start).count();
+	printf("Time_1: %" PRId64 "\n", t_paral);
+
+	float boost = (float)t_posled / t_paral;
+	printf("Speedup: %f\n", boost);
+	return 0;
 }
